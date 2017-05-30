@@ -1,0 +1,154 @@
+--- !ruby/object:Gem::Specification
+name: sinatra
+version: !ruby/object:Gem::Version
+  version: 2.0.0
+platform: ruby
+authors:
+- Blake Mizerany
+- Ryan Tomayko
+- Simon Rozet
+- Konstantin Haase
+autorequire:
+bindir: bin
+cert_chain: []
+date: 2017-05-07 00:00:00.000000000 Z
+dependencies:
+- !ruby/object:Gem::Dependency
+  name: rack
+  requirement: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '2.0'
+  type: :runtime
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '2.0'
+- !ruby/object:Gem::Dependency
+  name: tilt
+  requirement: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '2.0'
+  type: :runtime
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '2.0'
+- !ruby/object:Gem::Dependency
+  name: rack-protection
+  requirement: !ruby/object:Gem::Requirement
+    requirements:
+    - - '='
+      - !ruby/object:Gem::Version
+        version: 2.0.0
+  type: :runtime
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    requirements:
+    - - '='
+      - !ruby/object:Gem::Version
+        version: 2.0.0
+- !ruby/object:Gem::Dependency
+  name: mustermann
+  requirement: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '1.0'
+  type: :runtime
+  prerelease: false
+  version_requirements: !ruby/object:Gem::Requirement
+    requirements:
+    - - "~>"
+      - !ruby/object:Gem::Version
+        version: '1.0'
+description: Sinatra is a DSL for quickly creating web applications in Ruby with minimal
+  effort.
+email: sinatrarb@googlegroups.com
+executables: []
+extensions: []
+extra_rdoc_files:
+- README.de.md
+- README.es.md
+- README.fr.md
+- README.hu.md
+- README.ja.md
+- README.ko.md
+- README.md
+- README.pt-br.md
+- README.pt-pt.md
+- README.ru.md
+- README.zh.md
+- LICENSE
+files:
+- ".yardopts"
+- AUTHORS.md
+- CHANGELOG.md
+- CONTRIBUTING.md
+- Gemfile
+- LICENSE
+- MAINTENANCE.md
+- README.de.md
+- README.es.md
+- README.fr.md
+- README.hu.md
+- README.ja.md
+- README.ko.md
+- README.md
+- README.pt-br.md
+- README.pt-pt.md
+- README.ru.md
+- README.zh.md
+- Rakefile
+- SECURITY.md
+- examples/chat.rb
+- examples/simple.rb
+- examples/stream.ru
+- lib/sinatra.rb
+- lib/sinatra/base.rb
+- lib/sinatra/images/404.png
+- lib/sinatra/images/500.png
+- lib/sinatra/indifferent_hash.rb
+- lib/sinatra/main.rb
+- lib/sinatra/show_exceptions.rb
+- lib/sinatra/version.rb
+- sinatra.gemspec
+homepage: http://www.sinatrarb.com/
+licenses:
+- MIT
+metadata: {}
+post_install_message:
+rdoc_options:
+- "--line-numbers"
+- "--inline-source"
+- "--title"
+- Sinatra
+- "--main"
+- README.rdoc
+- "--encoding=UTF-8"
+require_paths:
+- lib
+required_ruby_version: !ruby/object:Gem::Requirement
+  requirements:
+  - - ">="
+    - !ruby/object:Gem::Version
+      version: 2.2.0
+required_rubygems_version: !ruby/object:Gem::Requirement
+  requirements:
+  - - ">="
+    - !ruby/object:Gem::Version
+      version: '0'
+requirements: []
+rubyforge_project:
+rubygems_version: 2.6.11
+signing_key:
+specification_version: 4
+summary: Classy web-development dressed in a DSL
+test_files: []
