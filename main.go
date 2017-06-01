@@ -126,6 +126,9 @@ type loggingHandler struct {
 
 func (h loggingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	t := time.Now()
+	if addr := req.Header.Get("X-Forwarded-For"); addr != "" {
+		req.RemoteAddr = addr
+	}
 	responseRecorder := NewResponseRecorder(w)
 	h.handler.ServeHTTP(responseRecorder, req)
 	logrus.WithFields(logrus.Fields{
@@ -134,6 +137,7 @@ func (h loggingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		"method":   req.Method,
 		"status":   responseRecorder.Status(),
 		"size":     responseRecorder.Size(),
+		"remote":   req.RemoteAddr,
 	}).Info()
 }
 
