@@ -81,7 +81,6 @@ func main() {
 	}
 	http.HandleFunc(DependencyAPIEndpoint, fetchGemDepsHandler(client, idx))
 	http.HandleFunc(path.Join("/private", DependencyAPIEndpoint), fetchPrivateGemDepsHandler(idx))
-	logrus.Info(path.Join("/private", DependencyAPIEndpoint))
 	http.HandleFunc("/private/api/v1/gems", postGemHandler(uploader, bucket, idx))
 
 	proxy := &httputil.ReverseProxy{
@@ -104,8 +103,13 @@ func main() {
 	http.HandleFunc("/gems/", fetchGemHandler(svc, bucket, proxy.ServeHTTP))
 	http.HandleFunc("/private/versions", http.NotFound)
 	http.Handle("/private/gems/", http.StripPrefix("/private/", fetchGemHandler(svc, bucket, nil)))
-
-	http.Handle("/", proxy)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.EscapedPath() == "/" || strings.HasPrefix(r.URL.EscapedPath(), "/private") {
+			http.NotFound(w, r)
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	})
 
 	go func() {
 		mux := http.NewServeMux()

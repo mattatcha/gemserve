@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -87,12 +88,18 @@ func (i *Index) refresh() error {
 		"key":    i.key,
 	})
 
-	log.Debug("refreshing gem index")
+	log.WithField("count", len(i.gems)).Debug("refreshing gem index")
+	defer func() {
+		log.WithField("count", len(i.gems)).Info("index refresh complete")
+	}()
 	res, err := i.svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(i.bucket),
 		Key:    aws.String(i.key),
 	})
 	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeNoSuchKey {
+			return nil
+		}
 		return err
 	}
 
@@ -108,9 +115,7 @@ func (i *Index) refresh() error {
 		i.put(gem)
 		log.WithField("gem", gem.Name+"-"+gem.Number).Debug("indexed gem")
 	}
-	log.WithFields(logrus.Fields{
-		"count": len(i.gems),
-	}).Info("index refresh complete")
+
 	return nil
 }
 
