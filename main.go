@@ -48,6 +48,7 @@ func main() {
 	}).Info("starting")
 	var (
 		bucket      = os.Getenv("S3_BUCKET")
+		enableProxy = os.Getenv("ENABLE_PROXY")
 		serverPort  string
 		metricsPort string
 	)
@@ -104,6 +105,10 @@ func main() {
 	http.HandleFunc("/private/versions", http.NotFound)
 	http.Handle("/private/gems/", http.StripPrefix("/private/", fetchGemHandler(svc, bucket, nil)))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if enableProxy == "" {
+			http.NotFound(w, r)
+			return
+		}
 		if r.URL.EscapedPath() == "/" || strings.HasPrefix(r.URL.EscapedPath(), "/private") {
 			http.NotFound(w, r)
 			return
