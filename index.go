@@ -76,8 +76,9 @@ func (i *Index) save() error {
 
 func (i *Index) Refresh() error {
 	i.mu.Lock()
-	defer i.mu.Unlock()
-	return i.refresh()
+	err := i.refresh()
+	i.mu.Unlock()
+	return err
 }
 
 func (i *Index) refresh() error {
@@ -118,4 +119,23 @@ func (i *Index) Deps() (deps []Metadata) {
 	deps = append(deps, i.gems...)
 	i.mu.Unlock()
 	return
+}
+
+func (i *Index) Lookup(names ...string) (deps []Metadata) {
+	i.mu.Lock()
+	for _, gem := range i.gems {
+		if stringInSlice(gem.Name, names) {
+			deps = append(deps, gem)
+		}
+	}
+	i.mu.Unlock()
+	return
+}
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
