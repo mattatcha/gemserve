@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// LoadIndex of ruby gems from key
 func LoadIndex(svc *s3.S3, bucket, key string) (*Index, error) {
 	var index = &Index{
 		svc:    svc,
@@ -29,6 +30,10 @@ type Index struct {
 	mu     sync.Mutex
 }
 
+func (i *Index) keyJSON() string {
+	return i.key + ".json"
+}
+
 func (i *Index) find(name, version string) *Metadata {
 	for _, gem := range i.gems {
 		if gem.Name == name && gem.Number == version {
@@ -38,6 +43,7 @@ func (i *Index) find(name, version string) *Metadata {
 	return nil
 }
 
+// Put gem in index
 func (i *Index) Put(gem Metadata) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
@@ -59,6 +65,10 @@ func (i *Index) put(gem Metadata) error {
 }
 
 func (i *Index) save() error {
+	return i.saveJSON()
+}
+
+func (i *Index) saveJSON() error {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
@@ -68,13 +78,25 @@ func (i *Index) save() error {
 
 	_, err := i.svc.PutObject(&s3.PutObjectInput{
 		Bucket:      aws.String(i.bucket),
-		Key:         aws.String(i.key),
+		Key:         aws.String(i.keyJSON()),
 		Body:        bytes.NewReader(buf.Bytes()),
 		ContentType: aws.String("application/json"),
 	})
 	return err
 }
+func (i *Index) saveRuby() error {
+	var buf bytes.Buffer
+	writeDeps(&buf, i.Deps())
 
+	_, err := i.svc.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(i.bucket),
+		Key:    aws.String(i.key),
+		Body:   bytes.NewReader(buf.Bytes()),
+	})
+	return err
+}
+
+// Refresh in memory index with s3 persisted json index
 func (i *Index) Refresh() error {
 	i.mu.Lock()
 	err := i.refresh()
@@ -85,7 +107,7 @@ func (i *Index) Refresh() error {
 func (i *Index) refresh() error {
 	log := logrus.WithFields(logrus.Fields{
 		"bucket": i.bucket,
-		"key":    i.key,
+		"key":    i.keyJSON(),
 	})
 
 	log.WithField("count", len(i.gems)).Debug("refreshing gem index")
@@ -94,7 +116,7 @@ func (i *Index) refresh() error {
 	}()
 	res, err := i.svc.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(i.bucket),
-		Key:    aws.String(i.key),
+		Key:    aws.String(i.keyJSON()),
 	})
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == s3.ErrCodeNoSuchKey {
@@ -126,6 +148,7 @@ func (i *Index) Deps() (deps []Metadata) {
 	return
 }
 
+// Lookup from index names, returning their deps
 func (i *Index) Lookup(names ...string) (deps []Metadata) {
 	i.mu.Lock()
 	for _, gem := range i.gems {

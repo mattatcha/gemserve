@@ -209,7 +209,7 @@ func postGemHandler(uploader *s3manager.Uploader, bucket string, idx *Index) htt
 				return
 			}
 			req.Body.Close()
-			gem, err := LoadGem(body)
+			gem, err := LoadGem(body[:])
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
