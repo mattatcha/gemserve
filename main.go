@@ -83,6 +83,20 @@ func main() {
 	http.HandleFunc(DependencyAPIEndpoint, fetchGemDepsHandler(client, idx))
 	http.HandleFunc(path.Join("/private", DependencyAPIEndpoint), fetchPrivateGemDepsHandler(idx))
 	http.HandleFunc("/private/api/v1/gems", postGemHandler(uploader, bucket, idx))
+	http.HandleFunc("/private/api/v1/gems/yank", func(w http.ResponseWriter, r *http.Request) {
+		body, _ := ioutil.ReadAll(r.Body)
+		r.Body.Close()
+		params, _ := url.ParseQuery(string(body))
+		name, version := params.Get("gem_name"), params.Get("version")
+
+		logrus.WithField("gem", name+"_"+version).Info("deleted gem")
+
+		if err := idx.Delete(name, version); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	})
 
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {

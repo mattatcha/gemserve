@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"sync"
 
@@ -34,13 +35,30 @@ func (i *Index) keyJSON() string {
 	return i.key + ".json"
 }
 
-func (i *Index) find(name, version string) *Metadata {
-	for _, gem := range i.gems {
+func (i *Index) find(name, version string) (int, *Metadata) {
+	for idx, gem := range i.gems {
 		if gem.Name == name && gem.Number == version {
-			return &gem
+			return idx, &gem
 		}
 	}
-	return nil
+	return -1, nil
+}
+
+// Delete gem by name and version from index
+func (i *Index) Delete(name, version string) error {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if err := i.refresh(); err != nil {
+		return err
+	}
+
+	idx, md := i.find(name, version)
+	if md == nil {
+		return errors.New("gem not found")
+	}
+	// delete from gems
+	i.gems = append(i.gems[:idx], i.gems[idx+1:]...)
+	return i.save()
 }
 
 // Put gem in index
@@ -57,7 +75,7 @@ func (i *Index) Put(gem Metadata) error {
 }
 
 func (i *Index) put(gem Metadata) error {
-	if res := i.find(gem.Name, gem.Number); res != nil {
+	if _, res := i.find(gem.Name, gem.Number); res != nil {
 		return ErrDuplicateGem
 	}
 	i.gems = append(i.gems, gem)
@@ -84,6 +102,7 @@ func (i *Index) saveJSON() error {
 	})
 	return err
 }
+
 func (i *Index) saveRuby() error {
 	var buf bytes.Buffer
 	writeDeps(&buf, i.Deps())
