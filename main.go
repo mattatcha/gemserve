@@ -215,12 +215,18 @@ func fetchGemDepsHandler(client http.Client, idx *Index) http.HandlerFunc {
 func postGemHandler(svc *s3.S3, bucket string, idx *Index) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
+			defer req.Body.Close()
 			body, err := ioutil.ReadAll(req.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			req.Body.Close()
+
+			if req.ContentLength > 0 && req.ContentLength > int64(len(body)) {
+				http.Error(w, "body: short read", http.StatusInternalServerError)
+				return
+			}
+			logrus.Info(req.ContentLength, len(body))
 			gem, err := LoadGem(body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
