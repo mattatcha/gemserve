@@ -20,7 +20,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -68,7 +67,6 @@ func main() {
 	}
 
 	sess := session.Must(session.NewSession())
-	uploader := s3manager.NewUploader(sess)
 	svc := s3.New(sess)
 
 	idx, err := LoadIndex(s3.New(sess), bucket, DependencyAPIEndpoint)
@@ -82,7 +80,7 @@ func main() {
 	}
 	http.HandleFunc(DependencyAPIEndpoint, fetchGemDepsHandler(client, idx))
 	http.HandleFunc(path.Join("/private", DependencyAPIEndpoint), fetchPrivateGemDepsHandler(idx))
-	http.HandleFunc("/private/api/v1/gems", postGemHandler(uploader, bucket, idx))
+	http.HandleFunc("/private/api/v1/gems", postGemHandler(svc, bucket, idx))
 	http.HandleFunc("/private/api/v1/gems/yank", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(r.Body)
 		r.Body.Close()
@@ -214,7 +212,7 @@ func fetchGemDepsHandler(client http.Client, idx *Index) http.HandlerFunc {
 	}
 }
 
-func postGemHandler(uploader *s3manager.Uploader, bucket string, idx *Index) http.HandlerFunc {
+func postGemHandler(svc *s3.S3, bucket string, idx *Index) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
 			body, err := ioutil.ReadAll(req.Body)
@@ -223,7 +221,7 @@ func postGemHandler(uploader *s3manager.Uploader, bucket string, idx *Index) htt
 				return
 			}
 			req.Body.Close()
-			gem, err := LoadGem(body[:])
+			gem, err := LoadGem(body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -233,9 +231,8 @@ func postGemHandler(uploader *s3manager.Uploader, bucket string, idx *Index) htt
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-
 			key := fmt.Sprintf("gems/%s-%s.gem", gem.Name, gem.Number)
-			result, err := uploader.Upload(&s3manager.UploadInput{
+			result, err := svc.PutObject(&s3.PutObjectInput{
 				Bucket: aws.String(bucket),
 				Key:    aws.String(key),
 				Body:   bytes.NewReader(body),
@@ -246,10 +243,12 @@ func postGemHandler(uploader *s3manager.Uploader, bucket string, idx *Index) htt
 			}
 
 			logrus.WithFields(logrus.Fields{
-				"name":     gem.Name,
-				"version":  gem.Number,
-				"location": result.Location,
-			}).Info()
+				"name":          gem.Name,
+				"version":       gem.Number,
+				"etag":          *result.ETag,
+				"objectVersion": *result.VersionId,
+				"size":          len(body),
+			}).Info("uploaded")
 			w.WriteHeader(http.StatusCreated)
 			return
 		}

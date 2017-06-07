@@ -29,6 +29,9 @@ build/%: .GOPATH/.ok
 image: build/linux_amd64
 	$Q docker build -t mattaitchison/gemserve:$(VERSION) .
 
+push:
+	$Q docker push mattaitchison/gemserve:$(VERSION)
+
 .PHONY: clean test list cover format
 
 clean:
